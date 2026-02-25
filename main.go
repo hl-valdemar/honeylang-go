@@ -1,0 +1,32 @@
+package main
+
+import (
+	"fmt"
+	"honey/lexer"
+	"honey/source"
+	"os"
+)
+
+func main() {
+	source_paths := make([]string, 0, 10)
+	for _, arg := range os.Args[1:] {
+		source_paths = append(source_paths, arg)
+	}
+
+	if len(source_paths) == 0 {
+		fmt.Fprintf(os.Stderr, "honey requires at least one source file to compile\n")
+		os.Exit(1)
+	}
+
+	src, err := source.Load(source_paths[0])
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	tokens, _ := lexer.Scan(src)
+	for i := 0; i < tokens.Len(); i += 1 {
+		start := tokens.Starts[i]
+		end := tokens.Ends[i]
+		fmt.Printf("%s \"%s\"\n", tokens.Kinds[i].String(), string(src.Contents[start:end]))
+	}
+}

@@ -1,0 +1,36 @@
+#!/opt/homebrew/bin/lua
+
+local function build_debug()
+  return os.execute("go build .")
+end
+
+local function build_release()
+  return os.execute("go build -ldflags \"-s -w\"")
+end
+
+if #arg >= 1 then
+  local first = arg[1]
+  local result = nil
+  local target = nil
+
+  if first == "--debug" then
+    result = build_debug()
+    target = "debug"
+  elseif first == "--release" then
+    result = build_release()
+    target = "release"
+  end
+
+  if result ~= true then
+    print("Failed to build honeylang (" .. target .. ")")
+  else
+    print("Successfully built honeylang (" .. target .. ")")
+  end
+else
+  local result = build_debug()
+  if result ~= true then
+    print("Failed to build honeylang (debug)")
+  else
+    print("Successfully built honeylang (debug)")
+  end
+end
