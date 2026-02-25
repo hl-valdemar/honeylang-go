@@ -23,8 +23,17 @@ func main() {
 		fmt.Println(err)
 	}
 
-	tokens, _ := lexer.Scan(src)
-	for i := 0; i < tokens.Len(); i += 1 {
+	tokens, scanErrors := lexer.Scan(src)
+
+	if scanErrors.Len() > 0 {
+		for i := 0; i < scanErrors.Len(); i++ {
+			line, col := src.LineCol(scanErrors.Starts[i])
+			fmt.Fprintf(os.Stderr, "%s:%d:%d: error: %s\n",
+				src.FullPath, line, col, scanErrors.Kinds[i].String())
+		}
+	}
+
+	for i := 0; i < tokens.Len(); i++ {
 		start := tokens.Starts[i]
 		end := tokens.Ends[i]
 		fmt.Printf("%s \"%s\"\n", tokens.Kinds[i].String(), string(src.Contents[start:end]))

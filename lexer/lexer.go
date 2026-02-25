@@ -7,12 +7,13 @@ import (
 )
 
 type Lexer struct {
-	src *source.Source
-	pos uint
+	src    *source.Source
+	pos    uint
+	errors ScanErrors
 }
 
 func Init(src *source.Source) Lexer {
-	return Lexer{src, 0}
+	return Lexer{src, 0, initErrors()}
 }
 
 func Scan(src *source.Source) (Tokens, ScanErrors) {
@@ -22,7 +23,6 @@ func Scan(src *source.Source) (Tokens, ScanErrors) {
 
 func (l *Lexer) Scan() (Tokens, ScanErrors) {
 	tokens := initTokens()
-	errors := initErrors()
 
 	for {
 		r := l.peek()
@@ -52,34 +52,34 @@ func (l *Lexer) Scan() (Tokens, ScanErrors) {
 		start := l.pos
 		if unicode.IsLetter(*r) || *r == '_' {
 			t := l.scanIdent()
-			tokens.append(t.kind, t.start, t.end)
+			tokens.append(t)
 		} else if unicode.IsDigit(*r) {
 			t := l.scanNum()
-			tokens.append(t.kind, t.start, t.end)
+			tokens.append(t)
 		} else {
 			switch *r {
 			case ',':
 				l.advance()
-				tokens.append(Comma, start, l.pos)
+				tokens.append(Token{Comma, start, l.pos})
 			case ':':
 				l.advance()
 				next := l.peek()
 				if next != nil && *next == ':' {
 					l.advance()
-					tokens.append(DoubleColon, start, l.pos)
+					tokens.append(Token{DoubleColon, start, l.pos})
 				} else {
-					tokens.append(Colon, start, l.pos)
+					tokens.append(Token{Colon, start, l.pos})
 				}
 			default:
 				// unknown character encountered, report error!
 				l.advance()
-				errors.append(UnrecognizedCharacter, start, start+1)
+				l.errors.append(ScanError{UnrecognizedCharacter, start, start + 1})
 			}
 		}
 	}
 
-	tokens.append(EOF, l.pos, l.pos)
-	return tokens, errors
+	tokens.append(Token{EOF, l.pos, l.pos})
+	return tokens, l.errors
 }
 
 func (l *Lexer) scanIdent() Token {
@@ -98,12 +98,12 @@ func (l *Lexer) scanIdent() Token {
 		l.advance()
 	}
 
-	// TODO: handle potential keyword
+	// TODO: handle potential keywords
 
 	return Token{Identifier, start, l.pos}
 }
 
-func (l *Lexer) scanNum() (*Token, *ScanError) {
+func (l *Lexer) scanNum() Token {
 	start := l.pos
 	has_decimal := false
 	has_error := false
@@ -114,10 +114,10 @@ func (l *Lexer) scanNum() (*Token, *ScanError) {
 		next := l.peekOffset(1)
 		if next != nil && (*next == 'x' || *next == 'X') {
 			l.consumeHex()
-			return &Token{Number, start, l.pos}, nil
+			return Token{Number, start, l.pos}
 		} else if next != nil && (*next == 'b' || *next == 'B') {
 			l.consumeBin()
-			return &Token{Number, start, l.pos}, nil
+			return Token{Number, start, l.pos}
 		}
 	}
 
@@ -147,7 +147,7 @@ func (l *Lexer) scanNum() (*Token, *ScanError) {
 		} else if *c == '.' && has_decimal {
 			// multiple decimal points
 			if !has_error {
-				// TODO: report error
+				l.errors.append(ScanError{MultipleDecimalPoints, l.pos, l.pos + 1})
 				has_error = true
 			}
 			l.advance()
@@ -160,9 +160,11 @@ func (l *Lexer) scanNum() (*Token, *ScanError) {
 }
 
 func (l *Lexer) consumeHex() {
+	start := l.pos
 	// consume '0' and 'x'/'X'
 	l.advanceBy(2)
 
+	digitStart := l.pos
 	for {
 		h := l.peek()
 		if h == nil {
@@ -175,12 +177,18 @@ func (l *Lexer) consumeHex() {
 			break
 		}
 	}
+
+	if l.pos == digitStart {
+		l.errors.append(ScanError{EmptyHexLiteral, start, l.pos})
+	}
 }
 
 func (l *Lexer) consumeBin() {
+	start := l.pos
 	// consume '0' and 'b'/'B'
 	l.advanceBy(2)
 
+	digitStart := l.pos
 	for {
 		h := l.peek()
 		if h == nil {
@@ -192,6 +200,10 @@ func (l *Lexer) consumeBin() {
 		} else {
 			break
 		}
+	}
+
+	if l.pos == digitStart {
+		l.errors.append(ScanError{EmptyBinaryLiteral, start, l.pos})
 	}
 }
 
@@ -210,7 +222,7 @@ func (l *Lexer) peekOffset(offset uint) *rune {
 }
 
 func (l *Lexer) advance() {
-	l.pos += 1
+	l.pos++
 }
 
 func (l *Lexer) advanceBy(n uint) {
@@ -272,31 +284,48 @@ func initTokens() Tokens {
 	}
 }
 
-func (e *Tokens) append(kind TokenKind, start, end uint) {
-	e.assertHealth()
-	e.Kinds = append(e.Kinds, kind)
-	e.Starts = append(e.Starts, start)
-	e.Ends = append(e.Ends, end)
+func (t *Tokens) append(tok Token) {
+	t.assertHealth()
+	t.Kinds = append(t.Kinds, tok.kind)
+	t.Starts = append(t.Starts, tok.start)
+	t.Ends = append(t.Ends, tok.end)
 }
 
-func (e *Tokens) Len() int {
-	e.assertHealth()
-	return len(e.Kinds)
+func (t *Tokens) Len() int {
+	t.assertHealth()
+	return len(t.Kinds)
 }
 
-func (e *Tokens) assertHealth() {
-	if !(len(e.Kinds) == len(e.Starts) && len(e.Starts) == len(e.Ends)) {
-		panic(fmt.Sprintf("Parallel arrays out of sync! [%T]", *e))
+func (t *Tokens) assertHealth() {
+	if !(len(t.Kinds) == len(t.Starts) && len(t.Starts) == len(t.Ends)) {
+		panic(fmt.Sprintf("Parallel arrays out of sync! [%T]", *t))
 	}
 }
 
 // ERRORS
 
-type ScanErrorKind = uint
+type ScanErrorKind uint
 
 const (
 	UnrecognizedCharacter ScanErrorKind = iota
+	MultipleDecimalPoints
+	EmptyHexLiteral
+	EmptyBinaryLiteral
 )
+
+var scanErrorKindNames = [...]string{
+	UnrecognizedCharacter: "unrecognized character",
+	MultipleDecimalPoints: "multiple decimal points in number literal",
+	EmptyHexLiteral:       "empty hex literal (expected digits after '0x')",
+	EmptyBinaryLiteral:    "empty binary literal (expected digits after '0b')",
+}
+
+func (k ScanErrorKind) String() string {
+	if int(k) < len(scanErrorKindNames) {
+		return scanErrorKindNames[k]
+	}
+	return "unknown error"
+}
 
 type ScanError struct {
 	kind       ScanErrorKind
@@ -317,11 +346,11 @@ func initErrors() ScanErrors {
 	}
 }
 
-func (e *ScanErrors) append(kind ScanErrorKind, start, end uint) {
+func (e *ScanErrors) append(err ScanError) {
 	e.assertHealth()
-	e.Kinds = append(e.Kinds, kind)
-	e.Starts = append(e.Starts, start)
-	e.Ends = append(e.Ends, end)
+	e.Kinds = append(e.Kinds, err.kind)
+	e.Starts = append(e.Starts, err.start)
+	e.Ends = append(e.Ends, err.end)
 }
 
 func (e *ScanErrors) Len() int {
