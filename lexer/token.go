@@ -1,3 +1,5 @@
+//go:generate stringer -type=TokenKind
+
 package lexer
 
 import "fmt"
@@ -8,6 +10,10 @@ const (
 	// complex tokens
 	Identifier TokenKind = iota
 	Number
+
+	// keywords
+	Func
+	Return
 
 	// single-char tokens
 	Colon
@@ -24,31 +30,16 @@ const (
 
 	// special
 	EOF
+
+	_tokenKindCount // for book keeping
 )
 
-var tokenKindNames = [...]string{
-	Identifier:   "Identifier",
-	Number:       "Number",
-	Colon:        "Colon",
-	Comma:        "Comma",
-	LeftParen:    "LeftParen",
-	RightParen:   "RightParen",
-	LeftBracket:  "LeftBracket",
-	RightBracket: "RightBracket",
-	LeftCurly:    "LeftCurly",
-	RightCurly:   "RightCurly",
-	DoubleColon:  "DoubleColon",
-	EOF:          "EOF",
+var identKeyword = map[string]TokenKind{
+	"func":   Func,
+	"return": Return,
 }
 
-func (k TokenKind) String() string {
-	if int(k) < len(tokenKindNames) {
-		return tokenKindNames[k]
-	}
-	return "Unknown"
-}
-
-type Token struct {
+type TokenDesc struct {
 	kind       TokenKind
 	start, end uint
 }
@@ -67,7 +58,7 @@ func initTokens() Tokens {
 	}
 }
 
-func (t *Tokens) append(tok Token) {
+func (t *Tokens) append(tok TokenDesc) {
 	t.assertHealth()
 	t.Kinds = append(t.Kinds, tok.kind)
 	t.Starts = append(t.Starts, tok.start)

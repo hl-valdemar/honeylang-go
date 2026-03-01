@@ -25,7 +25,7 @@ func (k ScanErrorKind) String() string {
 	return "unknown error"
 }
 
-type ScanError struct {
+type ScanErrorDesc struct {
 	kind       ScanErrorKind
 	start, end uint
 }
@@ -44,7 +44,7 @@ func initErrors() ScanErrors {
 	}
 }
 
-func (e *ScanErrors) append(err ScanError) {
+func (e *ScanErrors) append(err ScanErrorDesc) {
 	e.assertHealth()
 	e.Kinds = append(e.Kinds, err.kind)
 	e.Starts = append(e.Starts, err.start)

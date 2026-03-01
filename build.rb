@@ -1,5 +1,6 @@
 #!/usr/bin/ruby
 
+# parse arguments
 is_release = false
 
 for arg in ARGV do
@@ -11,15 +12,19 @@ for arg in ARGV do
   end
 end
 
+# generate enum string methods
+system "go generate ./lexer"
+
+# build the honey compiler
 if is_release then
   success = system "go build -ldflags '-s -w'"
   if !success then
-    puts "Failed to build honeylang (release)"
+    abort "Failed to build honeylang (release)"
   end
 else
   success = system "go build ."
   if !success then
-    puts "Failed to build honeylang (debug)"
+    abort "Failed to build honeylang (debug)"
   end
 end
 

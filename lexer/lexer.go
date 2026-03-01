@@ -59,47 +59,47 @@ func (l *Lexer) Scan() (Tokens, ScanErrors) {
 			switch *r {
 			case ',':
 				l.advance()
-				tokens.append(Token{Comma, start, l.pos})
+				tokens.append(TokenDesc{Comma, start, l.pos})
 			case '(':
 				l.advance()
-				tokens.append(Token{LeftParen, start, l.pos})
+				tokens.append(TokenDesc{LeftParen, start, l.pos})
 			case ')':
 				l.advance()
-				tokens.append(Token{RightParen, start, l.pos})
+				tokens.append(TokenDesc{RightParen, start, l.pos})
 			case '[':
 				l.advance()
-				tokens.append(Token{LeftBracket, start, l.pos})
+				tokens.append(TokenDesc{LeftBracket, start, l.pos})
 			case ']':
 				l.advance()
-				tokens.append(Token{RightBracket, start, l.pos})
+				tokens.append(TokenDesc{RightBracket, start, l.pos})
 			case '{':
 				l.advance()
-				tokens.append(Token{LeftCurly, start, l.pos})
+				tokens.append(TokenDesc{LeftCurly, start, l.pos})
 			case '}':
 				l.advance()
-				tokens.append(Token{RightCurly, start, l.pos})
+				tokens.append(TokenDesc{RightCurly, start, l.pos})
 			case ':':
 				l.advance()
 				next := l.peek()
 				if next != nil && *next == ':' {
 					l.advance()
-					tokens.append(Token{DoubleColon, start, l.pos})
+					tokens.append(TokenDesc{DoubleColon, start, l.pos})
 				} else {
-					tokens.append(Token{Colon, start, l.pos})
+					tokens.append(TokenDesc{Colon, start, l.pos})
 				}
 			default:
 				// unknown character encountered, report error!
 				l.advance()
-				l.errors.append(ScanError{UnrecognizedCharacter, start, start + 1})
+				l.errors.append(ScanErrorDesc{UnrecognizedCharacter, start, start + 1})
 			}
 		}
 	}
 
-	tokens.append(Token{EOF, l.pos, l.pos})
+	tokens.append(TokenDesc{EOF, l.pos, l.pos})
 	return tokens, l.errors
 }
 
-func (l *Lexer) scanIdent() Token {
+func (l *Lexer) scanIdent() TokenDesc {
 	start := l.pos
 
 	for {
@@ -116,11 +116,15 @@ func (l *Lexer) scanIdent() Token {
 	}
 
 	// TODO: handle potential keywords
+	ident := l.src.Contents[start:l.pos]
+	if kind, ok := identKeyword[string(ident)]; ok {
+		return TokenDesc{kind, start, l.pos}
+	}
 
-	return Token{Identifier, start, l.pos}
+	return TokenDesc{Identifier, start, l.pos}
 }
 
-func (l *Lexer) scanNum() Token {
+func (l *Lexer) scanNum() TokenDesc {
 	start := l.pos
 	has_decimal := false
 	has_error := false
@@ -131,10 +135,10 @@ func (l *Lexer) scanNum() Token {
 		next := l.peekOffset(1)
 		if next != nil && (*next == 'x' || *next == 'X') {
 			l.consumeHex()
-			return Token{Number, start, l.pos}
+			return TokenDesc{Number, start, l.pos}
 		} else if next != nil && (*next == 'b' || *next == 'B') {
 			l.consumeBin()
-			return Token{Number, start, l.pos}
+			return TokenDesc{Number, start, l.pos}
 		}
 	}
 
@@ -164,7 +168,7 @@ func (l *Lexer) scanNum() Token {
 		} else if *c == '.' && has_decimal {
 			// multiple decimal points
 			if !has_error {
-				l.errors.append(ScanError{MultipleDecimalPoints, l.pos, l.pos + 1})
+				l.errors.append(ScanErrorDesc{MultipleDecimalPoints, l.pos, l.pos + 1})
 				has_error = true
 			}
 			l.advance()
@@ -173,7 +177,7 @@ func (l *Lexer) scanNum() Token {
 		}
 	}
 
-	return Token{Number, start, l.pos}
+	return TokenDesc{Number, start, l.pos}
 }
 
 func (l *Lexer) consumeHex() {
@@ -196,7 +200,7 @@ func (l *Lexer) consumeHex() {
 	}
 
 	if l.pos == digitStart {
-		l.errors.append(ScanError{EmptyHexLiteral, start, l.pos})
+		l.errors.append(ScanErrorDesc{EmptyHexLiteral, start, l.pos})
 	}
 }
 
@@ -220,7 +224,7 @@ func (l *Lexer) consumeBin() {
 	}
 
 	if l.pos == digitStart {
-		l.errors.append(ScanError{EmptyBinaryLiteral, start, l.pos})
+		l.errors.append(ScanErrorDesc{EmptyBinaryLiteral, start, l.pos})
 	}
 }
 
