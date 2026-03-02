@@ -60,39 +60,46 @@ s [..0]u8 :: arr[..]    # explicit null terminator (default so not necessary)
 s [..'A']u8 :: arr[..]  # use 'A' as sentinel
 
 # functions
-sum func(a, b int) int { ... }
+sum :: func(a, b int) int { ... }
 
 # to comptime or not to comptime
-$x :: 32                                        # comptime evaluable constant
-$sum func(a, b int) int { ... }                 # comptime evaluable function
-max func($T type, a, b T) T { ... }             # comptime polymorphic type params
-make_array func ($size usize) [size]u8 { ... }  # comptime value params
+$x :: 32                                           # comptime evaluable constant
+$sum :: func(a, b int) int { ... }                 # comptime evaluable function
+max :: func($T type, a, b T) T { ... }             # comptime polymorphic type params
+make_array :: func ($size usize) [size]u8 { ... }  # comptime value params
 
 # NB: variables are runtime dependent and as such not comptime compatible
 
 # namespaces carry behavior (and also holds data) - can't be instantiated, no runtime concept of a namespace
 person {
     # structs carry only data, no methods, no behavior
-    Data struct {
+    Data :: struct {
         name []u8  # `[]u8` is basically a string
         age u32
         position Vec2
     }
 
+    # const scoped to person
+    whos_in_charge :: Data{
+        name = "Jane",
+        age = 32,
+        position = Vec2{ x = 0, y = 0},
+    }
+
     # mutable variable scoped to person (sum of distances walked by all people)
     dist_sum float = 0
 
-    walk func(person @mut Data, distance float) boolean {
-        person.position.x += distance
+    walk :: func(p @mut Data, distance float) boolean {
+        p.position.x += distance
         dist_sum += distance
     }
 }
 
 # instantiating a struct from a namespace
 p :: person.Data{
-    name = "Jane",
-    age = 32,
-    position = Vec2{ x = 0, y = 0 },
+    name = "John",
+    age = 34,
+    position = Vec2{ x = 24, y = 31 },
 }
 
 # using a function from a namespace
