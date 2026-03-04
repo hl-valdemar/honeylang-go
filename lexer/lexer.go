@@ -29,8 +29,8 @@ func (l *Lexer) Scan() (Tokens, ScanErrors) {
 			break
 		}
 
-		// skip whitespace
-		if unicode.IsSpace(*r) {
+		// skip whitespace (except for newlines)
+		if unicode.IsSpace(*r) && *r != '\n' {
 			l.advance()
 			continue
 		}
@@ -45,7 +45,6 @@ func (l *Lexer) Scan() (Tokens, ScanErrors) {
 				}
 				l.advance()
 			}
-			continue
 		}
 
 		start := l.pos
@@ -57,6 +56,9 @@ func (l *Lexer) Scan() (Tokens, ScanErrors) {
 			tokens.append(t)
 		} else {
 			switch *r {
+			case '\n':
+				l.advance()
+				tokens.append(TokenDesc{NewLine, start, l.pos})
 			case ',':
 				l.advance()
 				tokens.append(TokenDesc{Comma, start, l.pos})
@@ -78,6 +80,9 @@ func (l *Lexer) Scan() (Tokens, ScanErrors) {
 			case '}':
 				l.advance()
 				tokens.append(TokenDesc{RightCurly, start, l.pos})
+			case '=':
+				l.advance()
+				tokens.append(TokenDesc{Equal, start, l.pos})
 			case ':':
 				l.advance()
 				next := l.peek()
@@ -108,7 +113,7 @@ func (l *Lexer) scanIdent() TokenDesc {
 			break
 		}
 
-		if !unicode.IsLetter(*r) && *r != '_' {
+		if !unicode.IsLetter(*r) && !unicode.IsDigit(*r) && *r != '_' {
 			break
 		}
 
@@ -126,8 +131,6 @@ func (l *Lexer) scanIdent() TokenDesc {
 
 func (l *Lexer) scanNum() TokenDesc {
 	start := l.pos
-	has_decimal := false
-	has_error := false
 
 	// check for hex (0x/0X) or binary (0b/0B) prefix
 	r := l.peek()
@@ -143,40 +146,7 @@ func (l *Lexer) scanNum() TokenDesc {
 	}
 
 	// check for decimal
-	for {
-		c := l.peek()
-		if c == nil {
-			break
-		}
-
-		if unicode.IsDigit(*c) {
-			l.advance()
-		} else if *c == '.' && !has_decimal {
-			// check if next char is also a digit
-			next := l.peekOffset(1)
-			if next != nil {
-				if unicode.IsDigit(*next) {
-					has_decimal = true
-					l.advance()
-				} else {
-					break
-				}
-			} else {
-				has_decimal = true
-				l.advance()
-			}
-		} else if *c == '.' && has_decimal {
-			// multiple decimal points
-			if !has_error {
-				l.errors.append(ScanErrorDesc{MultipleDecimalPoints, l.pos, l.pos + 1})
-				has_error = true
-			}
-			l.advance()
-		} else {
-			break
-		}
-	}
-
+	l.consumeDecimal()
 	return TokenDesc{Number, start, l.pos}
 }
 
@@ -225,6 +195,40 @@ func (l *Lexer) consumeBin() {
 
 	if l.pos == digitStart {
 		l.errors.append(ScanErrorDesc{EmptyBinaryLiteral, start, l.pos})
+	}
+}
+
+func (l *Lexer) consumeDecimal() {
+	has_decimal := false
+	has_error := false
+
+	for {
+		c := l.peek()
+		if c == nil {
+			break
+		}
+
+		if unicode.IsDigit(*c) {
+			l.advance()
+		} else if *c == '.' && !has_decimal {
+			// check if next char is also a digit
+			next := l.peekOffset(1)
+			if next != nil && unicode.IsDigit(*next) {
+				has_decimal = true
+				l.advance()
+			} else {
+				break
+			}
+		} else if *c == '.' && has_decimal {
+			// multiple decimal points
+			if !has_error {
+				l.errors.append(ScanErrorDesc{MultipleDecimalPoints, l.pos, l.pos + 1})
+				has_error = true
+			}
+			l.advance()
+		} else {
+			break
+		}
 	}
 }
 

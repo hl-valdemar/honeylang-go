@@ -12,12 +12,14 @@ const (
 	Number
 
 	// keywords
+	Mut
 	Func
 	Return
 
 	// single-char tokens
 	Colon
 	Comma
+	Equal
 	LeftParen
 	RightParen
 	LeftBracket
@@ -29,12 +31,14 @@ const (
 	DoubleColon
 
 	// special
+	NewLine
 	EOF
 
 	_tokenKindCount // for book keeping
 )
 
 var identKeyword = map[string]TokenKind{
+	"mut":    Mut,
 	"func":   Func,
 	"return": Return,
 }

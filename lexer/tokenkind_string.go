@@ -21,13 +21,14 @@ func _() {
 	_ = x[LeftCurly-10]
 	_ = x[RightCurly-11]
 	_ = x[DoubleColon-12]
-	_ = x[EOF-13]
-	_ = x[_tokenKindCount-14]
+	_ = x[NewLine-13]
+	_ = x[EOF-14]
+	_ = x[_tokenKindCount-15]
 }
 
-const _TokenKind_name = "IdentifierNumberFuncReturnColonCommaLeftParenRightParenLeftBracketRightBracketLeftCurlyRightCurlyDoubleColonEOF_tokenKindCount"
+const _TokenKind_name = "IdentifierNumberFuncReturnColonCommaLeftParenRightParenLeftBracketRightBracketLeftCurlyRightCurlyDoubleColonNewLineEOF_tokenKindCount"
 
-var _TokenKind_index = [...]uint8{0, 10, 16, 20, 26, 31, 36, 45, 55, 66, 78, 87, 97, 108, 111, 126}
+var _TokenKind_index = [...]uint8{0, 10, 16, 20, 26, 31, 36, 45, 55, 66, 78, 87, 97, 108, 115, 118, 133}
 
 func (i TokenKind) String() string {
 	idx := int(i) - 0

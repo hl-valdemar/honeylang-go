@@ -36,6 +36,11 @@ func main() {
 	for i := 0; i < tokens.Len(); i++ {
 		start := tokens.Starts[i]
 		end := tokens.Ends[i]
-		fmt.Printf("%s \"%s\"\n", tokens.Kinds[i].String(), string(src.Contents[start:end]))
+
+		val := string(src.Contents[start:end])
+		if val == "\n" {
+			val = "\\n"
+		}
+		fmt.Printf("%-20s %s\n", tokens.Kinds[i].String(), val)
 	}
 }
