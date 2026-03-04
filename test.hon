@@ -1,3 +1,6 @@
+pi :: 3.14
+x = 32
+
 main :: func() int {
-   return 0xff
+    return 0xff
 }

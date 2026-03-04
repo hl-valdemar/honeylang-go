@@ -10,25 +10,27 @@ func _() {
 	var x [1]struct{}
 	_ = x[Identifier-0]
 	_ = x[Number-1]
-	_ = x[Func-2]
-	_ = x[Return-3]
-	_ = x[Colon-4]
-	_ = x[Comma-5]
-	_ = x[LeftParen-6]
-	_ = x[RightParen-7]
-	_ = x[LeftBracket-8]
-	_ = x[RightBracket-9]
-	_ = x[LeftCurly-10]
-	_ = x[RightCurly-11]
-	_ = x[DoubleColon-12]
-	_ = x[NewLine-13]
-	_ = x[EOF-14]
-	_ = x[_tokenKindCount-15]
+	_ = x[Mut-2]
+	_ = x[Func-3]
+	_ = x[Return-4]
+	_ = x[Colon-5]
+	_ = x[Comma-6]
+	_ = x[Equal-7]
+	_ = x[LeftParen-8]
+	_ = x[RightParen-9]
+	_ = x[LeftBracket-10]
+	_ = x[RightBracket-11]
+	_ = x[LeftCurly-12]
+	_ = x[RightCurly-13]
+	_ = x[DoubleColon-14]
+	_ = x[NewLine-15]
+	_ = x[EOF-16]
+	_ = x[_tokenKindCount-17]
 }
 
-const _TokenKind_name = "IdentifierNumberFuncReturnColonCommaLeftParenRightParenLeftBracketRightBracketLeftCurlyRightCurlyDoubleColonNewLineEOF_tokenKindCount"
+const _TokenKind_name = "IdentifierNumberMutFuncReturnColonCommaEqualLeftParenRightParenLeftBracketRightBracketLeftCurlyRightCurlyDoubleColonNewLineEOF_tokenKindCount"
 
-var _TokenKind_index = [...]uint8{0, 10, 16, 20, 26, 31, 36, 45, 55, 66, 78, 87, 97, 108, 115, 118, 133}
+var _TokenKind_index = [...]uint8{0, 10, 16, 19, 23, 29, 34, 39, 44, 53, 63, 74, 86, 95, 105, 116, 123, 126, 141}
 
 func (i TokenKind) String() string {
 	idx := int(i) - 0
