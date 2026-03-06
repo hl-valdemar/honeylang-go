@@ -120,7 +120,7 @@ func (l *Lexer) scanIdent() TokenDesc {
 		l.advance()
 	}
 
-	// TODO: handle potential keywords
+	// handle potential keywords
 	ident := l.src.Contents[start:l.pos]
 	if kind, ok := identKeyword[string(ident)]; ok {
 		return TokenDesc{kind, start, l.pos}
@@ -146,7 +146,7 @@ func (l *Lexer) scanNum() TokenDesc {
 	}
 
 	// check for decimal
-	l.consumeDecimal()
+	l.consumeDec()
 	return TokenDesc{Number, start, l.pos}
 }
 
@@ -198,7 +198,7 @@ func (l *Lexer) consumeBin() {
 	}
 }
 
-func (l *Lexer) consumeDecimal() {
+func (l *Lexer) consumeDec() {
 	has_decimal := false
 	has_error := false
 
